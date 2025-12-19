@@ -5,7 +5,7 @@ import prettierConfig from 'eslint-config-prettier';
 export default [
   // Ignore build outputs and dependencies
   {
-    ignores: ['node_modules', 'dist', 'build', 'coverage', 'example/dist', 'example/node_modules'],
+    ignores: ['node_modules', 'dist', 'build', 'coverage', 'example'],
   },
 
   // Base recommended configs
@@ -13,9 +13,9 @@ export default [
   ...tseslint.configs.recommended,
   prettierConfig,
 
-  // Apply to all TypeScript files
+  // Apply to TypeScript files in src/ (with typed linting)
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -29,10 +29,16 @@ export default [
     },
   },
 
-  // Config files can use console and don't need strict rules
+  // Config and test files - no typed linting (not in tsconfig.json)
   {
     files: ['*.config.{js,ts,mjs}', 'test.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      // No parserOptions.project - these files aren't in tsconfig.json
+    },
     rules: {
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
     },
   },
