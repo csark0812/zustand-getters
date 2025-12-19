@@ -1,0 +1,11 @@
+example/
+src/
+*.test.ts
+*.spec.ts
+tsconfig.json
+vite.config.ts
+.github/
+.husky/
+.gitignore
+CHANGELOG.md
+

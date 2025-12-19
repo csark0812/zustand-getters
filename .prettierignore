@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Example app
+example/dist/
+example/node_modules/
+
+# Jest testing artifacts
+coverage/
+
+# Logs
+*.log
+
+# Lock files
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+bun.lockb
+
+# Mac system files
+.DS_Store
+
+# IDE
+.vscode/
+.cursor/
+
