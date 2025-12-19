@@ -148,20 +148,9 @@ npm publish --access public
 
 Run `bun install && bun run build && bun run test` to verify everything works!
 
-## 🔄 Latest Implementation: Reactive JavaScript Getters
+## 🎯 Implementation: Reactive JavaScript Getters
 
-### What Changed (v2.0.0)
-
-The middleware was completely rewritten to make regular JavaScript object getters reactive:
-
-**Before (v1.0):**
-
-```typescript
-// Generated getter functions like getCount(), getName()
-const count = useStore.getState().getCount();
-```
-
-**After (v2.0):**
+The middleware makes regular JavaScript object getters reactive:
 
 ```typescript
 // Native JavaScript getters become reactive

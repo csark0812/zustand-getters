@@ -467,16 +467,14 @@ get quadruple() { return this.double * 2; }
 
 **Problem:** Getter computation is slow.
 
-**Solution:** Consider memoizing expensive operations outside the getter:
+**Solution:** Optimize the computation itself or consider memoizing expensive operations outside the getter:
 
 ```typescript
-// For now, optimize the computation itself
+// Optimize the computation
 get filteredItems() {
   // Use efficient algorithms
   return this.items.filter(/* optimized filter */);
 }
-
-// Future: Built-in memoization coming soon!
 ```
 
 ### Getter returns wrong value after state update
