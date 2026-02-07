@@ -74,7 +74,7 @@ const mockStorage = new MockStorage();
 
 // Create theme store (exactly like the real implementation)
 const THEME_STORAGE_KEY = 'postprint-theme-test';
-let defaultPreference: ThemePreference = 'system';
+const defaultPreference: ThemePreference = 'system';
 
 function createThemeStore() {
   const storage = createJSONStorage<ThemePersistedState>(
