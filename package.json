@@ -1,6 +1,6 @@
 {
   "name": "@csark0812/zustand-getters",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A Zustand middleware that makes regular JavaScript object getters reactive",
   "author": "Christopher Sarkissian",
   "license": "MIT",
