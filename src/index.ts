@@ -260,14 +260,7 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
   // Initialize state by calling the stateCreator with our wrapped set
   actualState = stateCreator(wrappedSet, get, store);
 
-  // Create the proxy once and reuse it
-  const stateProxy = createReactiveProxy(
-    () => actualState,
-    () => set((currentState: any) => currentState),
-    getterCache,
-  );
-  
-  // Wrap store.getState() to return our Proxy instead of Zustand's internal state
+  // Wrap store.getState() to sync actualState and return it with getters
   const originalGetState = store.getState;
   let isSyncing = false; // Prevent re-entrant syncing
   
@@ -297,12 +290,17 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
         isSyncing = false;
       }
     }
-    // Return the cached proxy
-    return stateProxy as any;
+    // Return actualState directly (not a proxy)
+    // This allows Zustand's subscription mechanism to work with reference equality
+    return actualState as any;
   };
 
-  // Return the cached proxy
-  return stateProxy;
+  // Return a Proxy for the initial state that React hooks will use
+  return createReactiveProxy(
+    () => actualState,
+    () => set((currentState: any) => currentState),
+    getterCache,
+  );
 };
 
 // =============================================================================
