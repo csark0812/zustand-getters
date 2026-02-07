@@ -265,26 +265,18 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
   let isSyncing = false; // Prevent re-entrant syncing
   
   store.getState = () => {
-    // Sync actualState from Zustand's state first (but avoid re-entrance)
+    // Sync actualState from Zustand's state first (but avoid re-entrance).
+    // We always clear the getter cache and merge when raw state exists so that
+    // subscribe callbacks (and any code reading getState() immediately after set())
+    // see up-to-date getter values. Previously we only synced when a plain property
+    // inequality was detected, which could leave getters stale.
     if (!isSyncing) {
       isSyncing = true;
       try {
         const zustandState = originalGetState();
         if (zustandState) {
-          // Check if we need to sync regular properties
-          for (const key in zustandState) {
-            if (Object.prototype.hasOwnProperty.call(zustandState, key)) {
-              const descriptor = Object.getOwnPropertyDescriptor(actualState, key);
-              // Only sync non-getter properties
-              if (!descriptor || typeof descriptor.get !== 'function') {
-                if (actualState[key] !== zustandState[key]) {
-                  clearCache();
-                  updateActualState(zustandState, false);
-                  break;
-                }
-              }
-            }
-          }
+          clearCache();
+          updateActualState(zustandState, false);
         }
       } finally {
         isSyncing = false;
