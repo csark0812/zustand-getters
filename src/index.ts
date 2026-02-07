@@ -178,22 +178,11 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
     getterCache.clear();
   };
 
-  // Create a wrapper for set that updates our actualState reference
-  // We preserve the original set's signature by forwarding parameters
-  const wrappedSet = (partial: any, replace?: any) => {
-    // Clear getter cache when state changes
-    clearCache();
-
-    // Compute the new state - handle both function and object partial
-    const nextState = typeof partial === 'function' ? partial(actualState) : partial;
-
+  // Helper function to update actualState by merging with new state
+  const updateActualState = (nextState: any, replace?: boolean) => {
     // Handle void returns from immer-style updates
-    // When using immer, the function mutates state and returns void
     if (nextState === undefined) {
-      // Immer has already mutated the draft, Zustand's immer middleware handles this
-      // We just need to call the original set to trigger the update
-      set(partial, replace);
-      return;
+      return actualState;
     }
 
     // Update our actualState reference with the new state
@@ -222,6 +211,8 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
           if (originalDescriptor && typeof originalDescriptor.get === 'function') {
             // Keep the getter from actualState - don't overwrite it
             // The getter will read from the updated state via 'this'
+            // IMPORTANT: Don't copy the value from nextState for getter properties
+            // This prevents persist middleware from overwriting getters with stale evaluated values
           } else {
             // Regular property - update with the new value
             Object.defineProperty(mergedState, key, {
@@ -237,24 +228,81 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
       actualState = mergedState;
     }
 
-    // Update Zustand's state - forward to original set
-    if (replace) {
-      set(actualState, true);
+    return actualState;
+  };
+
+  // Create a wrapper for set that updates our actualState reference
+  // This is passed to the stateCreator
+  const wrappedSet = (partial: any, replace?: any) => {
+    // Clear getter cache when state changes
+    clearCache();
+
+    // Compute the new state - handle both function and object partial
+    const nextState = typeof partial === 'function' ? partial(actualState) : partial;
+
+    // Update actualState and forward to Zustand
+    const newState = updateActualState(nextState, replace);
+
+    // Forward to original Zustand set with the full state including getters
+    // Getters are marked as non-enumerable so persist won't serialize them
+    if (nextState === undefined) {
+      // Immer-style void return
+      set(partial, replace);
     } else {
-      set(actualState);
+      if (replace) {
+        set(newState, true);
+      } else {
+        set(newState);
+      }
     }
   };
 
   // Initialize state by calling the stateCreator with our wrapped set
   actualState = stateCreator(wrappedSet, get, store);
 
-  // Return a Proxy that always reads from actualState
-  // Pass the shared cache to the proxy
-  return createReactiveProxy(
+  // Create the proxy once and reuse it
+  const stateProxy = createReactiveProxy(
     () => actualState,
     () => set((currentState: any) => currentState),
     getterCache,
   );
+  
+  // Wrap store.getState() to return our Proxy instead of Zustand's internal state
+  const originalGetState = store.getState;
+  let isSyncing = false; // Prevent re-entrant syncing
+  
+  store.getState = () => {
+    // Sync actualState from Zustand's state first (but avoid re-entrance)
+    if (!isSyncing) {
+      isSyncing = true;
+      try {
+        const zustandState = originalGetState();
+        if (zustandState) {
+          // Check if we need to sync regular properties
+          for (const key in zustandState) {
+            if (Object.prototype.hasOwnProperty.call(zustandState, key)) {
+              const descriptor = Object.getOwnPropertyDescriptor(actualState, key);
+              // Only sync non-getter properties
+              if (!descriptor || typeof descriptor.get !== 'function') {
+                if (actualState[key] !== zustandState[key]) {
+                  clearCache();
+                  updateActualState(zustandState, false);
+                  break;
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        isSyncing = false;
+      }
+    }
+    // Return the cached proxy
+    return stateProxy as any;
+  };
+
+  // Return the cached proxy
+  return stateProxy;
 };
 
 // =============================================================================
