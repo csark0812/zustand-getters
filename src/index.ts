@@ -201,21 +201,35 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
     if (replace) {
       actualState = nextState;
     } else {
-      // Start with actualState to preserve its getters
-      const mergedState = { ...actualState };
+      // Create a new object by copying all property descriptors from actualState
+      // This preserves getters instead of evaluating them
+      const mergedState = Object.create(Object.getPrototypeOf(actualState));
+      
+      // Copy all properties from actualState with their descriptors
+      for (const key of Object.keys(actualState)) {
+        const descriptor = Object.getOwnPropertyDescriptor(actualState, key);
+        if (descriptor) {
+          Object.defineProperty(mergedState, key, descriptor);
+        }
+      }
 
-      // Copy properties from nextState, but preserve getters from actualState
+      // Update properties from nextState, but preserve getters from actualState
       for (const key in nextState) {
         if (Object.prototype.hasOwnProperty.call(nextState, key)) {
           // Check if this property was a getter in the original actualState
           const originalDescriptor = Object.getOwnPropertyDescriptor(actualState, key);
 
           if (originalDescriptor && typeof originalDescriptor.get === 'function') {
-            // Preserve the getter from actualState (user's spread destroyed it)
-            Object.defineProperty(mergedState, key, originalDescriptor);
+            // Keep the getter from actualState - don't overwrite it
+            // The getter will read from the updated state via 'this'
           } else {
-            // Regular property - copy the new value
-            mergedState[key] = nextState[key];
+            // Regular property - update with the new value
+            Object.defineProperty(mergedState, key, {
+              value: nextState[key],
+              writable: true,
+              enumerable: true,
+              configurable: true,
+            });
           }
         }
       }
