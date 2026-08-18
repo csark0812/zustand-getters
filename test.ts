@@ -148,6 +148,53 @@ if (computedDesc && computedDesc.get) {
   console.error('❌ Getters were not wrapped');
 }
 
+console.log('\nTest 4: getState snapshot stability');
+console.log('==================================');
+
+interface SnapshotState {
+  count: number;
+  double: number;
+  increment: () => void;
+}
+
+const useSnapshotStore = create<SnapshotState>()(
+  getters((set) => ({
+    count: 1,
+    get double() {
+      return this.count * 2;
+    },
+    increment: () => set({ count: 2 }),
+  })),
+);
+
+const snapshotA = useSnapshotStore.getState();
+const snapshotB = useSnapshotStore.getState();
+if (!Object.is(snapshotA, snapshotB)) {
+  console.error('❌ getState returned a new object with no state change');
+  process.exit(1);
+}
+if (snapshotA.count !== 1 || snapshotA.double !== 2) {
+  console.error('❌ snapshot values are wrong before increment');
+  process.exit(1);
+}
+
+snapshotA.increment();
+const snapshotC = useSnapshotStore.getState();
+const snapshotD = useSnapshotStore.getState();
+if (Object.is(snapshotA, snapshotC)) {
+  console.error('❌ getState kept the old object after increment');
+  process.exit(1);
+}
+if (!Object.is(snapshotC, snapshotD)) {
+  console.error('❌ getState returned a new object after increment with no further change');
+  process.exit(1);
+}
+if (snapshotC.count !== 2 || snapshotC.double !== 4) {
+  console.error('❌ snapshot values are wrong after increment');
+  process.exit(1);
+}
+console.log('✅ getState keeps a stable snapshot until state changes');
+
 console.log('\n🎉 All tests completed!');
 console.log(
   '\nNote: To fully test reactivity, run the example app with: cd example && bun run dev',
