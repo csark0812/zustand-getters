@@ -25,7 +25,7 @@
     "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "test": "bun run build && bun run test.ts",
+    "test": "bun run build && bun run test.ts && bun run test-persist-integration.ts && bun run test-react-components.tsx",
     "example": "cd example && bun run dev",
     "lint": "eslint . --fix",
     "format": "prettier . --write"

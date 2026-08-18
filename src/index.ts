@@ -260,25 +260,42 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
   // Initialize state by calling the stateCreator with our wrapped set
   actualState = stateCreator(wrappedSet, get, store);
 
+  // Identity `set` from the proxy get trap must not re-enter persist writes.
+  // Persist serializes with `{ ...get() }`. That spread reads enumerable getters.
+  let suppressReactiveSetDepth = 0;
+  const triggerUpdate = () => {
+    if (suppressReactiveSetDepth > 0) {
+      return;
+    }
+    suppressReactiveSetDepth += 1;
+    try {
+      set((currentState: any) => currentState);
+    } finally {
+      suppressReactiveSetDepth -= 1;
+    }
+  };
+
   // Wrap store.getState() to sync actualState and return it with getters
   const originalGetState = store.getState;
   let isSyncing = false; // Prevent re-entrant syncing
-  
+  let lastSyncedZustandState: unknown;
+
   store.getState = () => {
     // Sync actualState from Zustand's state first (but avoid re-entrance).
-    // We always clear the getter cache and merge when raw state exists so that
-    // subscribe callbacks (and any code reading getState() immediately after set())
-    // see up-to-date getter values. Previously we only synced when a plain property
-    // inequality was detected, which could leave getters stale.
+    // Only merge when Zustand's state reference changes. React getSnapshot
+    // must return the same object when store data did not change.
     if (!isSyncing) {
       isSyncing = true;
+      suppressReactiveSetDepth += 1;
       try {
         const zustandState = originalGetState();
-        if (zustandState) {
+        if (zustandState && !Object.is(zustandState, lastSyncedZustandState)) {
+          lastSyncedZustandState = zustandState;
           clearCache();
           updateActualState(zustandState, false);
         }
       } finally {
+        suppressReactiveSetDepth -= 1;
         isSyncing = false;
       }
     }
@@ -290,7 +307,7 @@ const gettersImpl: GettersImpl = (stateCreator) => (set, get, store) => {
   // Return a Proxy for the initial state that React hooks will use
   return createReactiveProxy(
     () => actualState,
-    () => set((currentState: any) => currentState),
+    triggerUpdate,
     getterCache,
   );
 };
