@@ -513,6 +513,11 @@ While [zustand-computed](https://github.com/chrisvander/zustand-computed) comput
 - **Performance**: Plain values remain fast, only getters are wrapped
 - **Simplicity**: No separate computed config needed
 
+## Related work
+
+- [Zustand Expo DevTools](https://github.com/csark0812/zustand-expo-devtools) brings state inspection and time-travel debugging to Expo apps.
+- [Christopher's profile](https://github.com/csark0812) connects the broader mobile and developer-tooling work.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request at [https://github.com/csark0812/zustand-getters](https://github.com/csark0812/zustand-getters).
