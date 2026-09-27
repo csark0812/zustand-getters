@@ -1,6 +1,7 @@
 # @csark0812/zustand-getters
 
 [![NPM](https://img.shields.io/npm/v/@csark0812/zustand-getters.svg)](https://www.npmjs.com/package/@csark0812/zustand-getters)
+[![NPM Downloads](https://img.shields.io/npm/dm/@csark0812/zustand-getters.svg)](https://www.npmjs.com/package/@csark0812/zustand-getters)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@csark0812/zustand-getters)](https://bundlephobia.com/package/@csark0812/zustand-getters)
 [![License](https://img.shields.io/npm/l/@csark0812/zustand-getters.svg)](https://github.com/csark0812/zustand-getters/blob/main/LICENSE)
 
